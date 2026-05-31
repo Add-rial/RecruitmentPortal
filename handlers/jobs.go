@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"recruitmentportal/config"
 	"recruitmentportal/models"
@@ -21,13 +22,23 @@ func CreateJob(c *gin.Context){
 		return
 	}
 
-	for _, s := range(j.Skills){
+	for _, s := range j.Skills {
 		var skill models.Skill
-		if err := config.DB.Where("name = ?", s).First(&skill).Error; err != nil{
-			skill = models.Skill{Name: s}
-			if err := config.DB.Create(&skill).Error; err != nil{
+		row := config.DB.QueryRow("SELECT id, name FROM skills WHERE name = $1", s)
+		err := row.Scan(&skill.ID, &skill.Name)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				skill.Name = s
+				err = config.DB.QueryRow("INSERT INTO skills (name) VALUES ($1) RETURNING id", s).Scan(&skill.ID)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"error": "Failed to create skill",
+					})
+					return
+				}
+			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "Failed to create skill",
+					"error": "Database error checking skill",
 				})
 				return
 			}
@@ -36,18 +47,48 @@ func CreateJob(c *gin.Context){
 	}
 
 	job := models.Job{
-		Title: j.Title,
-		Description: j.Description,
-		Company: j.Company,
+		Title:              j.Title,
+		Description:        j.Description,
+		Company:            j.Company,
 		CompanyDescription: j.CompanyDescription,
 		CompanyContactMail: j.CompanyContactMail,
-		CreatedBy: userID,
-		Skills: skills,
+		CreatedBy:          userID,
+		Skills:             skills,
 	}
 
-	if err := config.DB.Create(&job).Error; err != nil{
+	tx, err := config.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to start database transaction",
+		})
+		return
+	}
+	defer tx.Rollback()
+
+	err = tx.QueryRow(
+		"INSERT INTO jobs (title, description, company, company_description, company_contact_mail, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		job.Title, job.Description, job.Company, job.CompanyDescription, job.CompanyContactMail, job.CreatedBy,
+	).Scan(&job.ID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to create job",
+		})
+		return
+	}
+
+	for _, skill := range skills {
+		_, err = tx.Exec("INSERT INTO job_skills (job_id, skill_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", job.ID, skill.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to map job to skills",
+			})
+			return
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to commit transaction",
 		})
 		return
 	}

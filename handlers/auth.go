@@ -45,10 +45,14 @@ func RegisterUser(c *gin.Context){
 		Role: role,
 	}
 
-	if err := config.DB.Create(&user).Error; err != nil {
-        c.JSON(500, gin.H{"error": "Failed to create user"})
-        return
-    }
+	err = config.DB.QueryRow(
+		"INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id",
+		user.Name, user.Email, user.Password, user.Role,
+	).Scan(&user.ID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to create user"})
+		return
+	}
 
 	userResponse := models.UserResponse{
 		Name: u.Name,
@@ -74,7 +78,8 @@ func LoginUser(c *gin.Context){
 	}
 
 	var user models.User
-	if err := config.DB.Where("email = ?", u.Email).First(&user).Error; err != nil {
+	row := config.DB.QueryRow("SELECT id, name, email, password, role FROM users WHERE email = $1", u.Email)
+	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role); err != nil {
 		c.JSON(401, gin.H{"error": "Invalid email or password"})
 		return
 	}

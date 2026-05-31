@@ -12,7 +12,8 @@ func ApproveRecruiter(c *gin.Context) {
 	userID := c.Param("id")
 
 	var user models.User
-	if err := config.DB.Where("id = ?", userID).First(&user); err != nil {
+	row := config.DB.QueryRow("SELECT id, name, email, password, role FROM users WHERE id = $1", userID)
+	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "User not found",
 		})
@@ -27,7 +28,8 @@ func ApproveRecruiter(c *gin.Context) {
 	}
 
 	user.Role = models.Recruiter
-	if err := config.DB.Save(&user).Error; err != nil {
+	_, err := config.DB.Exec("UPDATE users SET role = $1 WHERE id = $2", user.Role, user.ID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update user",
 		})
