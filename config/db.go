@@ -74,6 +74,13 @@ func initSchema() error {
 			skill_id INT REFERENCES skills(id) ON DELETE CASCADE,
 			PRIMARY KEY (job_id, skill_id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS applications (
+			id SERIAL PRIMARY KEY,
+			user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			job_id INT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(user_id, job_id)
+		);`,
 	}
 
 	for _, query := range queries {

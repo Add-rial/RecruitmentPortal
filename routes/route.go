@@ -15,11 +15,56 @@ func SetupRoutes(r *gin.Engine) {
         })
     })
 
-    r.POST("/register", handlers.RegisterUser)
-    r.POST("/login", handlers.LoginUser)
-    r.GET("/profile", middleware.AuthMiddleware(),handlers.Profile)
+    auth := r.Group("/auth")
+    {
+        auth.POST("/register", handlers.RegisterUser)
+        auth.POST("/login", handlers.LoginUser)
+    }
 
-    r.POST("/jobs", middleware.AuthMiddleware(), middleware.RequireRole(string(models.Recruiter), string(models.Admin)), handlers.CreateJob)
+    protected := r.Group("/")
+    protected.Use(middleware.AuthMiddleware())
+    {
+        protected.GET("/profile", handlers.Profile)
+    }
 
-    r.PUT("/admin/approve/:id", middleware.AuthMiddleware(), middleware.RequireRole("admin"),handlers.ApproveRecruiter,)
+    jobs := r.Group("/jobs")
+    {
+        jobs.GET("", handlers.GetJobs)
+    }
+
+    recruiter := r.Group("/recruiter")
+    recruiter.Use(
+        middleware.AuthMiddleware(),
+        middleware.RequireRole(
+            string(models.Recruiter),
+            string(models.Admin),
+        ),
+    )
+    {
+        recruiter.POST("/jobs", handlers.CreateJob)
+        recruiter.GET("/jobs", handlers.GetRecruiterJobs)
+        recruiter.PUT("/jobs/:id", handlers.UpdateJob)
+        recruiter.DELETE("/jobs/:id", handlers.DeleteJob)
+        recruiter.GET("/jobs/:id/applicants", handlers.GetJobApplicants)
+    }
+
+    applicant := r.Group("/applicant")
+    applicant.Use(
+        middleware.AuthMiddleware(),
+        middleware.RequireRole(
+            string(models.Applicant),
+        ),
+    )
+    {
+        applicant.POST("/jobs/:id/apply", handlers.ApplyJob)
+    }
+
+    admin := r.Group("/admin")
+    admin.Use(
+        middleware.AuthMiddleware(),
+        middleware.RequireRole(string(models.Admin)),
+    )
+    {
+        admin.PUT("/approve/:id", handlers.ApproveRecruiter)
+    }
 }

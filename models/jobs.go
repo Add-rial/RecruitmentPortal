@@ -1,15 +1,18 @@
 package models
 
-type Job struct{
-	ID          uint	`gorm:"primaryKey"`
-	Title       string	`gorm:"not null"`
-	Description string	`gorm:"not null"`
-	Company     string	`gorm:"not null;index"`
-	CompanyDescription string	
-	CompanyContactMail string	`gorm:"not null"`
-	CreatedBy   uint	`gorm:"index"`
+type Job struct {
+	ID          uint     `json:"id"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
 
-	Skills		[]Skill `gorm:"many2many:job_skills;"`
+	Company string `json:"company"`
+
+	CompanyDescription string `json:"company_description"`
+	CompanyContactMail string `json:"company_contact_mail"`
+
+	CreatedBy uint `json:"created_by"`
+
+	Skills []Skill `json:"skills"`
 }
 
 type Skill struct{
@@ -24,4 +27,10 @@ type CreateJobRequest struct {
 	CompanyDescription    string   `json:"company_description"`
 	CompanyContactMail    string   `json:"company_contact_mail" binding:"required"`
 	Skills                []string `json:"skills" binding:"required"`
+}
+
+type Application struct {
+	ID uint
+	UserID uint
+	JobID uint
 }
