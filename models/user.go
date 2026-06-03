@@ -17,18 +17,20 @@ type CreateUserRequest struct {
 }
 
 type UserResponse struct {
-    ID    int    `json:"id"`
-    Name  string `json:"name"`
-    Email string `json:"email"`
-    Role  Role   `json:"role"`
+    ID        int     `json:"id"`
+    Name      string  `json:"name"`
+    Email     string  `json:"email"`
+    Role      Role    `json:"role"`
+    ResumeURL *string `json:"resume_url,omitempty"`
 }
 
 type User struct {
-    ID       int    `gorm:"primaryKey" json:"id"`
-    Name     string `json:"name"`
-    Email    string `gorm:"unique;not null" json:"email"`
-    Password string `json:"-"`
-    Role     Role   `json:"role"`
+    ID        int     `gorm:"primaryKey" json:"id"`
+    Name      string  `json:"name"`
+    Email     string  `gorm:"unique;not null" json:"email"`
+    Password  string  `json:"-"`
+    Role      Role    `json:"role"`
+    ResumeURL *string `json:"resume_url,omitempty"`
 }
 
 type LoginRequest struct {

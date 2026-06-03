@@ -15,8 +15,8 @@ func Profile(c *gin.Context){
 
 	var u models.User
 
-	row := config.DB.QueryRow("SELECT id, name, email, password, role FROM users WHERE id = $1", id)
-	if err := row.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role); err != nil {
+	row := config.DB.QueryRow("SELECT id, name, email, password, role, resume_url FROM users WHERE id = $1", id)
+	if err := row.Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.Role, &u.ResumeURL); err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "User not found, create a new account",

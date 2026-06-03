@@ -415,7 +415,7 @@ func GetJobApplicants(c *gin.Context) {
 	}
 
 	rows, err := config.DB.Query(`
-		SELECT u.id, u.name, u.email, u.role
+		SELECT u.id, u.name, u.email, u.role, u.resume_url
 		FROM users u
 		JOIN applications a ON u.id = a.user_id
 		WHERE a.job_id = $1`, jobID)
@@ -430,7 +430,7 @@ func GetJobApplicants(c *gin.Context) {
 	var applicants []models.UserResponse
 	for rows.Next() {
 		var app models.UserResponse
-		err := rows.Scan(&app.ID, &app.Name, &app.Email, &app.Role)
+		err := rows.Scan(&app.ID, &app.Name, &app.Email, &app.Role, &app.ResumeURL)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to scan applicant",

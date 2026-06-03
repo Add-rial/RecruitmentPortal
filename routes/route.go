@@ -25,6 +25,7 @@ func SetupRoutes(r *gin.Engine) {
     protected.Use(middleware.AuthMiddleware())
     {
         protected.GET("/profile", handlers.Profile)
+        protected.GET("/applicant/resumes/:filename", handlers.ViewResume)
     }
 
     jobs := r.Group("/jobs")
@@ -57,6 +58,7 @@ func SetupRoutes(r *gin.Engine) {
     )
     {
         applicant.POST("/jobs/:id/apply", handlers.ApplyJob)
+        applicant.POST("/resume", handlers.UploadResume)
     }
 
     admin := r.Group("/admin")
