@@ -82,7 +82,7 @@ func initSchema() error {
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			UNIQUE(user_id, job_id)
 		);`,
-		`CREATE TABLE messages (
+		`CREATE TABLE IF NOT EXISTS messages (
 			id SERIAL PRIMARY KEY,
 			sender_id INT NOT NULL REFERENCES users(id),
 			receiver_id INT NOT NULL REFERENCES users(id),
